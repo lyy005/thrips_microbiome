@@ -75,3 +75,17 @@ metaflye
 
 
 ## genome assembly of bacterial isolates
+```
+conda activate canu_v2.2
+# -d <assembly-directory>, with output files named using the -p <assembly-prefix>
+canu -p my_assembly -d canu_output genomeSize=5m -pacbio reads.fastq.gz
+
+# Using the web server of GeneMarkS to annotate protein-coding genes.
+https://exon.gatech.edu/genemarks.cgi
+
+#Repetitive sequences
+
+
+```
+
+
