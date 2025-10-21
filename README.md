@@ -4,6 +4,7 @@ A pipeline for analyzing the microbiome of thrips
 ## characterization of thrips microbiome
 
 ### short reads
+```
 #FastQ data were preprocessed and quality-controlled using fastp, an ultrafast all-in-one tool. https://github.com/OpenGene/fastp
 #  download specified version, i.e. fastp v0.23.4
 wget http://opengene.org/fastp/fastp.0.23.4
@@ -32,8 +33,10 @@ python combine_mpa.py -i sample1.MPA.txt sample2.MPA.txt sample3.MPA.txt  -o 3sa
 Rscript kraken2alpha.R -i 3samples.txt
 
 ### Microbiome Helper An assortment of scripts to help process and automate various microbiome and metagenomic bioinformatic tools.https://github.com/LangilleLab/microbiome_helper/tree/master 
+
 perl metaphlan_to_stamp.pl 3samples.norm.txt >3samples.norm.txt.spf
 Rscript metaphlan_hclust_heatmap.R -i 3samples.norm.txt.spf -t Species -n 25 -o heatmap_Species
+```
 
 
 SingleM
