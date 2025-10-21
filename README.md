@@ -7,6 +7,7 @@ A pipeline for analyzing the microbiome of thrips
 ```
 # FastQ data were preprocessed and quality-controlled using fastp, an ultrafast all-in-one tool. https://github.com/OpenGene/fastp
 # download specified version, i.e. fastp v0.23.4
+
 wget http://opengene.org/fastp/fastp.0.23.4
 mv fastp.0.23.4 fastp
 chmod a+x ./fastp
