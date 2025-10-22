@@ -131,7 +131,7 @@ conda activate checkm2_v1.1.0
 checkm2 predict --threads 20 --input ./step3_semibin_output/output_bins/ --output-directory ./step5_checkm2_output/ --extension gz
 ```
 
-### f - Species assignment
+#### f - Species assignment
 We used GTDBTk (https://github.com/Ecogenomics/GTDBTk) to assign MAGs.
 ```
 conda activate gtdbtk_v2.5.2
