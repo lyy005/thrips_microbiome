@@ -138,6 +138,85 @@ conda activate gtdbtk_v2.5.2
 gtdbtk classify_wf --genome_dir ./step3_semibin_output/output_bins/ --out_dir ./step6_gtdbtk_output/ --cpus 40 --extension gz
 ```
 
+#### g - PCoA
+Lastly, we ran PCoA analysis based on the species-assignments of Kraken2, SingleM and long-read assembly in R. 
+```
+# Load R packages
+library(vegan)
+library(ape)
+library(data.table) # for transpose
+
+# 1 - Kraken2
+thrips <- read.table('out.genus.reform.vegdist', header = TRUE)
+head(thrips)
+
+thrips_trans <- transpose(thrips)
+head(thrips_trans)
+
+# get row and colnames in order
+colnames(thrips_trans) <- rownames(thrips)
+rownames(thrips_trans) <- colnames(thrips)
+head(thrips_trans)
+
+## Principal coordinate analysis and simple ordination plot
+thrips.D <- vegdist(thrips_trans, "bray")
+res <- pcoa(thrips.D)
+res$values
+
+# 2 - SingleM
+thrips_singleM <- read.table('singlem.genus', header = TRUE)
+head(thrips_singleM)
+
+library(data.table)
+thrips_singleM_trans <- transpose(thrips_singleM)
+head(thrips_singleM_trans)
+
+# get row and colnames in order
+colnames(thrips_singleM_trans) <- rownames(thrips_singleM)
+rownames(thrips_singleM_trans) <- colnames(thrips_singleM)
+head(thrips_singleM_trans)
+
+## Principal coordinate analysis and simple ordination plot
+thrips_singleM.D <- vegdist(thrips_singleM_trans, "bray")
+res_singleM <- pcoa(thrips_singleM.D)
+biplot(res_singleM)
+
+# 3 - MAGs species-level
+asm <- read.table('asm.species.long.avg_serratia', header = TRUE)
+head(asm)
+
+asm$Titer <- as.numeric(asm$Titer)
+
+asm_wide <- reshape(
+  asm,
+  timevar = "Bac",     # column that will become new column names
+  idvar   = "Host",   # column that identifies rows
+  direction = "wide"    # change from long → wide
+)
+
+asm_wide[is.na(asm_wide)] <- 0
+
+row.names(asm_wide) <- asm_wide[, 1]
+head(asm_wide)
+
+asm_wide <- asm_wide[, -1]
+head(asm_wide)
+
+## Principal coordinate analysis and simple ordination plot
+asm.D <- vegdist(asm_wide, "bray")
+res_asm <- pcoa(asm.D)
+
+# 4 - combine three plots
+pdf("PCoA.pdf", width = 10, height = 10, useDingbats = FALSE) # Open a new pdf file
+
+par(mfrow=c(2,2))
+biplot(res)
+biplot(res_singleM)
+biplot(res_asm)
+
+dev.off() # Close the file
+```
+
 ## 2 - Genome assembly and annotation of bacterial isolates
 Lastly, to confirm the metagenomic assembled scaffolds, we sequenced the cultured bacteria. 
 ```
