@@ -1,7 +1,7 @@
 # Characterization of the dynamic microbiome evolution across thrips species
 A pipeline for analyzing the microbiome of thrips
 
-<img width="2286" height="1152" alt="image" src="https://github.com/user-attachments/assets/0deecc13-68af-4ac5-8e15-4cea1b8cdfcc" />
+<img width="1143" height="576" alt="image" src="https://github.com/user-attachments/assets/0deecc13-68af-4ac5-8e15-4cea1b8cdfcc" />
 
 
 
