@@ -115,6 +115,29 @@ SemiBin2 single_easy_bin \
         -b genome.sorted.bam \
         -o step3_semibin_output
 ```
+
+#### d - Estimating bacterial titer
+To estimate the titer of bacteria, mosdepth (https://github.com/brentp/mosdepth) was used to calculate the sequencing depth of host and bacterial genomes with MAPQ >= 1. 
+```
+conda activate mosdepth_v0.3.8
+mosdepth -f genome.fa -n -t 20 --mapq 1 mapq1 genome.sorted.bam
+```
+
+#### e - Completeness of metagenomic assembled genomes (MAGs)
+We used CheckM2 to evaluate the completeness of MAGs.
+```
+conda activate checkm2_v1.1.0
+
+checkm2 predict --threads 20 --input ./step3_semibin_output/output_bins/ --output-directory ./step5_checkm2_output/ --extension gz
+```
+
+### f - Species assignment
+We used GTDBTk (https://github.com/Ecogenomics/GTDBTk) to assign MAGs.
+```
+conda activate gtdbtk_v2.5.2
+gtdbtk classify_wf --genome_dir ./step3_semibin_output/output_bins/ --out_dir ./step6_gtdbtk_output/ --cpus 40 --extension gz
+```
+
 ## 2 - Genome assembly and annotation of bacterial isolates
 Lastly, to confirm the metagenomic assembled scaffolds, we sequenced the cultured bacteria. 
 ```
