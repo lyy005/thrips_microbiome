@@ -1,15 +1,18 @@
 # Characterization of the dynamic microbiome evolution across thrips species
-A pipeline for analyzing the microbiome of thrips
+An analytical pipeline to survey the microbiome of thrips. 
 
 <img width="1143" height="576" alt="image" src="https://github.com/user-attachments/assets/0deecc13-68af-4ac5-8e15-4cea1b8cdfcc" />
 
 
 
-## characterization of thrips microbiome
+## 1 - Characterization of thrips microbiome
+To understand the thrips microbiome, we first identify bacterial species based on short reads.  
+### 1.1 - Short-reads-based approach
 
-### short reads
+#### a - Quality control of short reads
+We first downloaded whole-genome sequencing data for thrips. Then, we removed low-quality reads using FASTP v0.23.4 https://github.com/OpenGene/fastp. 
 ```
-# FastQ data were preprocessed and quality-controlled using fastp, an ultrafast all-in-one tool. https://github.com/OpenGene/fastp
+# Short reads were preprocessed and quality-controlled using fastp, an ultrafast all-in-one tool. https://github.com/OpenGene/fastp
 # download specified version, i.e. fastp v0.23.4
 
 wget http://opengene.org/fastp/fastp.0.23.4
@@ -18,8 +21,11 @@ chmod a+x ./fastp
 fastp -i sample1_1.fastq.gz -I sample1_2.fastq.gz -o sample1_1.clean.fastq.gz -O sample1_2.clean.fastq.gz
 fastp -i sample2_1.fastq.gz -I sample2_2.fastq.gz -o sample2_1.clean.fastq.gz -O sample2_2.clean.fastq.gz
 fastp -i sample3_1.fastq.gz -I sample3_2.fastq.gz -o sample3_1.clean.fastq.gz -O sample3_2.clean.fastq.gz
+```
 
-# Kraken2
+#### b - Species assignment using Kraken2
+To classify the short reads, we first classified short reads based on kmer matches using Kraken2.  
+```
 mamba activate kraken2
 time kraken2  --threads 52 --db nt --paired sample1_1.clean.fastq.gz sample1_2.clean.fastq.gz --report sample1.kreport >sample1.kraken
 time kraken2  --threads 52 --db nt --paired sample2_1.clean.fastq.gz sample2_2.clean.fastq.gz --report sample2.kreport >sample2.kraken
@@ -46,39 +52,71 @@ perl metaphlan_to_stamp.pl 3samples.norm.txt >3samples.norm.txt.spf
 Rscript metaphlan_hclust_heatmap.R -i 3samples.norm.txt.spf -t Species -n 25 -o heatmap_Species
 ```
 
+#### c - Species assignment using SingleM 
+We then assigned reads based on read matches to highly conserved regions of Bacteria using SingleM (https://github.com/wwood/singlem)
+```
+conda activate singlem_v0.19.0
+singlem pipe -1 read.1.fq.gz -2 read.2.fq.gz -p output --threads 20
+```
 
-SingleM
+### 1.2 - Long-reads-based approach
+To assemble the bacterial genomes from long reads, we first removed the host reads. 
 
-
-### long reads
-To assemble the bacterial genomes from long reads, we first removed the host reads:
-
-### a. host read removal
-
+#### a - Host read removal
+To remove reads from the host, we first map long reads to host genomes. Only chromosome-level scaffolds were used for mapping here to avoid mis-aligned bacterial reads. We used three different parameters in Minimap2 to align (1) PacBio HiFi reads, (2) Nanopore reads, and (3) PacBio CLR reads. 
     
 ```
 conda activate samtools_v1.21
-# for HiFi reads
+# 1 - for HiFi reads
 minimap2 -a genome.fa -o genome.sam -t 20 -x map-hifi hifi.fq.gz
 
-# for ONT reads
+# 2 - for ONT reads
 minimap2 -a genome.fa -o genome.sam -t 20 -x map-ont ont.fq.gz
 
-# for CLR reads
+# 3 - for CLR reads
 minimap2 -a genome.fa -o genome.sam -t 20 -x map-pb clr.fq.gz
 
 samtools view -h -b -S genome.sam -o genome.bam --threads 20
 samtools sort genome.bam -o genome.sorted.bam --threads 20
 samtools index genome.sorted.bam
 ```
+#### b - Metagenomic assembly
+To assemble bacterial genomes, we used two strategies. For PacBio HiFi reads and Nanopore reads, myloasm (https://github.com/bluenote-1577/myloasm) was used. For PacBio CLR reads, metaflye (https://github.com/mikolmogorov/Flye) was used. 
 
-myloasm
+```
+# 1 - PacBio HiFi reads and Nanopore reads
+conda activate myloasm_v0.2.0
+myloasm bac_reads.fastq.gz -o asm -t 96 --hifi
 
-metaflye
+# 2 - PacBio CLR reads
+conda activate flye_v2.9.6
+flye --pacbio-raw bac_reads.fastq.gz --out-dir step1_flye_out --threads 96 --meta
+```
 
+#### c - Binning
+To have an accurate estimation of bacterial diversity and richness, we binned metagenomic assemblies using SemiBin (https://github.com/BigDataBiology/SemiBin). 
+```
+# 1 - we first aligned reads to the metagenomic scaffolds to estimate their depth
+conda activate samtools_v1.21
 
+# genome.fa is the assembled scaffolds from above (myloasm or metaflye)
+minimap2 -a genome.fa -o genome.sam -t 20 -x map-pb bac_reads.fastq.gz
+samtools view -h -b -S genome.sam -o genome.bam --threads 20
+samtools sort genome.bam -o genome.sorted.bam --threads 20
+samtools index genome.sorted.bam
 
-## genome assembly of bacterial isolates
+# 2 - binning
+conda activate semibin_v2.2.0
+SemiBin2 single_easy_bin \
+        --environment global \
+        --sequencing-type long_read \
+	--processes 20 \
+        -i genome.fa \
+        -b genome.sorted.bam \
+        -o step3_semibin_output
+```
+## 2 - Genome assembly and annotation of bacterial isolates
+Lastly, to confirm the metagenomic assembled scaffolds, we sequenced the cultured bacteria. 
 ```
 conda activate canu_v2.2
 # -d <assembly-directory>, with output files named using the -p <assembly-prefix>
